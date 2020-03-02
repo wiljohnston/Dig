@@ -43,9 +43,11 @@ The instructions are an array of objects, 'instructions', that tell the dig how 
 
 ```
 {
-  selector: string that you'd pass into a querySelectorAll() // REQUIRED
+  // REQUIRED
+  selector: string that you'd pass into a querySelectorAll()
   
-  waitfor: string selector for the browser to await for before the selection takes place // OPTIONAL
+  // OPTIONAL
+  waitfor: string selector for the browser to await for before the selection takes place
   
   // ONE of the following three are REQUIRED
   index: an int index to pick from the selected handles 
