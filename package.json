@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/wiljohnston/Dig#readme",
   "dependencies": {
+    "algorithms": "git+https://github.com/wiljohnston/Algorithms.git",
     "puppeteer": "^2.1.1",
     "underscore": "^1.9.2"
   }

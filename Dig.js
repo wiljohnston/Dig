@@ -22,7 +22,6 @@ class Dig {
     };
     options = setDefaults(options, defaults);
     applyProperties(this, options);
-    console.log(this.sandbox);
   }
 
   // call before you do anything
@@ -89,35 +88,3 @@ class Dig {
 }
 
 module.exports = Dig;
-
-// -------
-
-let pointsInstructions = [
-  {
-    selector:
-      '[summary="Invitations point score cut offs and their dates of effect"]',
-    index: 0
-  },
-  {
-    selector: "td",
-    indexCallback: async (cont, index) => {
-      var text = await cont.evaluate(c => c.innerText);
-      if (text === "Skilled Independent visa (subclass 189)") {
-        return index + 1;
-      }
-    }
-  }
-];
-
-let d = new Dig();
-d.open().then(async () => {
-  console.log("in here");
-  console.log(
-    await d.digUp(
-      "https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds",
-      pointsInstructions
-    )
-  );
-}).then(()=>{
-  d.close();
-});
