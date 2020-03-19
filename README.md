@@ -38,6 +38,8 @@ dig.open()
 });
 ```
 
+## Functional documentation
+
 ### dig.collectTableData(rowHandles, columnData, { filterFunction, inFunction, inFunctionParams })
 
 - `rowHandles` <Array<ElementHandle>> The handles to loop over and extract the data from.
@@ -55,7 +57,7 @@ dig.open()
 
 This method loops over each `ElementHandle` of `rowHandles` array, performing performing `document.querySelector` with each of the given `selector` properties. The `ElementHandle` returned is evaluated via the `ElementHandle.evaluate` method, and stored in an object under the key `columnName`. The default property to evaluate is `innerText`, if no `selectAttribute` is given.
 
-####Examples:
+#### Examples:
 
 ```js
 // In each 'div.some-row-class' container,

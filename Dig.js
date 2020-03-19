@@ -46,7 +46,7 @@ class Dig {
   }
 
   /**
-   * Opens a new puppeteer browser, with the class properties as defaults - must be called before you do anything
+   * Opens a new puppeteer browser; called before the scraping begins.
    * @async
    * 
    * @param {Object} options Optional parameter to alter the parameters of the browser.
@@ -68,13 +68,29 @@ class Dig {
   }
 
   /**
-   * Closes the browser - should be called at the end of any process to prevent an army of chromium processes
+   * Closes the browser; called at the end of any process to prevent an army of chromium processes.
    * @async
    * @return {null} No return value.
    */
   async close() {
     await this.browser.close();
     console.log("Browser is closed");
+  }
+
+
+  /**
+  * Pause execution for some random amount of milliseconds, between two boundaries.
+  * 
+  * @param {Object} minMs Lower bound of milliseconds to wait for.
+  * @param {Object} maxMs Upper bound of milliseconds to wait for.
+  * @return {Promise} Waits for setTimeout to resolve
+  * 
+  */
+  delay(minMs, maxMs) {
+    let gap = maxMs !== undefined ? maxMs - minMs : 0; // If we were just given the minMs variable, this is the time to pause for
+    let waitFor = minMs + Math.random() * gap;
+    console.log(`waiting ${waitFor / 1000} seconds`);
+    return new Promise(res => setTimeout(res, waitFor));
   }
 
   /**
@@ -188,7 +204,7 @@ class Dig {
    */
   async scrapeTables(url, instructions){
   
-    let { tableSelector, rowSelector, columnData, nextPageSelector, prefunction, inFunction, filterFunction } = instructions;
+    let { tableSelector, rowSelector, columnData, nextPageSelector, preFunction, inFunction, filterFunction } = instructions;
   
     await this.open();
     let browser = this.browser;
@@ -197,8 +213,8 @@ class Dig {
     await page.goto(url);
   
     // Perform some prefunction, if given
-    if(prefunction != undefined){
-      await prefunction(page, browser);
+    if(preFunction !== undefined){
+      await preFunction.bind(this)(page, browser);
     }
     
     let tableData = [];
