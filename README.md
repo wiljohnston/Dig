@@ -1,17 +1,10 @@
 # Dig
 
-Dig is an add-on to puppeteer that can be used to grab element handles from a webpage that are too hard to reach with a single query selector. This is very powerful with the chromium headless browser (puppeteer), as you can scrape just about anything with waitfors, callbacks, and selectors laid out in the dig instructions.
+Dig is an extension to the headless chrome application, puppeteer. Dig simplifies the process of extracting data from structured HTML elements, like tables, or lists of links to more datasets.
+
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
-### Prerequisites
-
-Ensure you've already installed puppeteer into your project
-
-```
-npm install puppeteer
-```
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Installing
 
@@ -20,17 +13,28 @@ Install dig
 ```
 npm install https://github.com/wiljohnston/Dig
 ```
+
 ### Running
 
-Generic example: create a new Dig object, open the browser, dig something up, and close the browser.
-(Be sure to open and close the browser when you're starting/finishing)
+Generic example:
+
+- create a new Dig object,
+- open the browser,
+- extract some table data,
+- close the browser.
+
+(Be sure to open and close the browser at the beginning/end of the process)
 
 ```
 let dig = new Dig();
-dig.open().then(async () => {
+dig.open()
+.then( async () => {
+
   let handle = await dig.digUp("https://google.com", instructions);
   let html = await handle.evaluate(val => val.innerHTML);
-}).then(()=>{
+
+})
+.then(() => {
   dig.close();
 });
 ```
@@ -43,12 +47,12 @@ The instructions are an array of objects, 'instructions', that tell the dig how 
 {
   // REQUIRED
   selector: string that you'd pass into a querySelectorAll()
-  
+
   // OPTIONAL
   waitfor: string selector for the browser to await for before the selection takes place
-  
+
   // ONE of the following three are REQUIRED
-  index: an int index to pick from the selected handles 
+  index: an int index to pick from the selected handles
   indexCallback: function(handle, i) that returns and index to pick from the selected handles
   booleanCallback: function(handle) selects the first handle that returns true
 }
@@ -57,6 +61,7 @@ The instructions are an array of objects, 'instructions', that tell the dig how 
 Objects in this format are put together in an array, so that the handle returned from one array is passed into the next instruction
 
 ### Instructions examples
+
 ```
 // example #1
 [
@@ -91,4 +96,3 @@ Objects in this format are put together in an array, so that the handle returned
   }
 ];
 ```
-
