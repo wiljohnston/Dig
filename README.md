@@ -11,7 +11,7 @@ These instructions will get you a copy of the project up and running on your loc
 Install dig
 
 ```
-npm install https://github.com/wiljohnston/Dig
+npm install https://github.com/wiljohnston/dig
 ```
 
 ### Running
