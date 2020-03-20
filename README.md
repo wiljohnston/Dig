@@ -18,24 +18,10 @@ npm install https://github.com/wiljohnston/Dig
 
 Generic example:
 
-- create a new Dig object,
-- open the browser,
-- do something,
-- close the browser.
-
-(Be sure to open and close the browser at the beginning/end of the process)
-
-```
+```js
+const Dig = require("dig");
 let dig = new Dig();
-dig.open()
-.then( async () => {
-
-  // do some dig function here
-
-})
-.then(() => {
-  dig.close();
-});
+// Now you're ready to scrape
 ```
 
 ## Functional documentation
@@ -79,13 +65,14 @@ let columnData = [
 let basicTableData = await dig.getTable(rowHandles, columnData);
 ```
 
-We could also include an inFunction to collect more data..
+We could also include an inFunction to collect more data:
 
 ```js
-// Let us define our inFunction:
 async function inFunction(rowHandle, rowObj) {
-  // Click on some link in this row to another page
+  // Since the inFunction.bind(this) is called, we can access the dig properties through the `this` keyword.
   let page = this.page;
+
+  // Click on some link in this row to another page
   let button = await rowHandle.$("a.link-to-details-page");
   button.click();
   await page.waitForNavigation();
@@ -155,14 +142,20 @@ let instructions = {
 let results = await dig.getTables(url, instructions);
 ```
 
-We could also include a preFunction, to search for the data we will collect..
+We could also include a preFunction, to search for the data we will collect:
 
 ```js
 // Select the search input, click on it, and search for 'Australia'
-let ourPrefunction = async (page, browser) => {
-  let textInput = await page.$("input.search-input");
-  await textInputIcon.click();
+function ourPrefunction (page) {
+  await page.click("#search-input");
   await page.keyboard.type("Australia");
+  await page.click("#search-button");
+
+  // If our results opened in a new tab, we could access it through the browser, as we call preFunction.bind(this)
+  let pages = await browser.pages();
+  let newPage = pages[2];
+  console.log(await newPage.$("#title"));
+  await newPage.close();
 };
 
 // Now add this to our instructions object, and call the function again
@@ -170,5 +163,6 @@ instructions.preFunction = ourPrefunction;
 let results = await dig.getTables(url, instructions);
 
 };
-We can also add filterFunction and inFunction callbacks to be passed down to `getTable`..
 ```
+
+We can also add filterFunction and inFunction callbacks to the instructions object to be passed down to `getTable` function. Refer to the `getTable` function documentation for an example of these functions.
