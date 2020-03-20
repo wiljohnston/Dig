@@ -2,8 +2,6 @@ const puppeteer = require("puppeteer");
 const _ = require("underscore");
 
 
-//TODO: do we need to pass down additinoal inFucntion params, or browser/page into prefunction, when we can access through 'this'?
-
 /**
  * Sets the properties of an object given the defaults and the actual given options, using the underscore package.
  * 
@@ -94,7 +92,7 @@ class Dig {
   }
 
   /**
-   * The objects passed into the collectTableData function, detailing what data to scrape from each row ElementHandle.
+   * The objects passed into the getTable function, detailing what data to scrape from each row ElementHandle.
    * @typedef ColumnObject
    * @type {Object}
    * 
@@ -116,17 +114,16 @@ class Dig {
    */
 
   /**
-   * This callback is optionally passed into the collectTableData function via the options parameter, executed on each row iteration after the column data is taken.
+   * This callback is optionally passed into the getTable function via its options parameter, bound to the dig object, executed on each row iteration after the column data is taken.
    * @callback rowInFunction
    * @async
    * 
    * @param {ElementHandle} rowHandle Current handle being looped over.
    * @param {Object} rowObj The data collected from the current row, with column names for keys, and the evaluated attributes as values.
-   * @param {Object} [inFunctionParams] Any additional parameters - must be passed down from the calling function's inFunctionParams parameter.
    */
 
   /** 
-   * This callback is optionally passed into the collectTableData function via the options parameter, executed on each row object to determine whether it should be pushed to the returned array.
+   * This callback is optionally passed into the getTable function via its options parameter, executed on each row object to determine whether it should be pushed to the returned array.
    * @callback rowFilterFunction
    * @async
    * 
@@ -142,12 +139,11 @@ class Dig {
    * @param {Array<ColumnObject>} columnData Information about the columns to evaluate from the row handles.
    * @param {Object} [options] An optional third parameter of functions for a more extensive scraping process.
    * @param {rowFilterFunction} [options.filterFunction] Called on each row to determine whether to push the row to the returned array.
-   * @param {rowInFunction} [options.inFunction] Called on each row iteration, after the column data has been collected.
-   * @param {Object} [options.inFunctionParams] Any added parameters to pass into the inFunction, other than the rowObject and the row ElementHandle.
+   * @param {rowInFunction} [options.inFunction] Called on each row iteration, after the column data has been collected; bound to dig object.
    * 
    * @return {Array<{Object}>} An array of objects that represent rows, with keys as column names and values as the attribute evaluated. 
    */
-  async collectTableData(rowHandles, columnData, { filterFunction, inFunction, inFunctionParams }){
+  async getTable(rowHandles, columnData, { filterFunction, inFunction }){
     var tableData = [];
     // Loop through each row handle, extract each cell
     for (var rowHandle of rowHandles) {
@@ -168,7 +164,7 @@ class Dig {
       }
       // Perform the inFunction, if any
       if(inFunction !== undefined){
-        await inFunction(rowHandle, rowObj, inFunctionParams); // Extra parameters can be passed to inFunction, eg the page, browser
+        await inFunction.bind(this)(rowHandle, rowObj); // Bind 'this' to the call so they can access browser, page, delay if needed
       }
       // Before we append this row to the output, pass it through the filter function, if any
       if(filterFunction === undefined || await filterFunction(rowObj)){
@@ -179,42 +175,40 @@ class Dig {
   }
 
   /** 
-   * Used to prepare the webpage for scraping, for example, searching a form, or selecting a dropdown; optionally passed into the scrapeTables function via the instructions parameter.
+   * Used to prepare the webpage for scraping, for example, searching a form, or selecting a dropdown; bound to dig object; optionally passed into the getTables function via the instructions parameter.
    * @callback scrapePreFunction
    * @async
    * @param {Page} page The page we are currently scraping.
-   * @param {Browser} browser The browser we are currently using to scrape.
    */
 
   /**
-   * Navigates to webpage, loops through each SERP, collecting data via the collectTableData function, and returns this collection.
+   * Navigates to webpage, loops through each SERP, collecting data via the getTable function, and returns this collection.
    * @async
    * 
    * @param {string} url The URL of the webpage that we will begin scraping.
    * @param {Object} instructions The parameter holding the instructions for scraping the desired information.
    * @param {string} instructions.tableSelector The selector string that will select a table handle the rows we want to extract from being its descendants.
    * @param {string} instructions.rowSelector The selector string that will select a series of row handles with the data we want to extract being their descendants.
-   * @param {Array<ColumnObject>} columnData Information about the columns to evaluate from the row handles.
+   * @param {Array<ColumnObject>} instructions.columnData Information about the columns to evaluate from the row handles.
    * @param {string} [instructions.nextPageSelector] The selector string that will return the handle to the link to navigate to the next page/SERP.
-   * @param {scrapePreFunction} [instructions.prefunction] A function executed before scraping begins, used to prepare the webpage in some way.
-   * @param {rowInFunction} [instructions.inFunction] Passed down to collectTableData and called on each row iteration, after the column data has been collected.
-   * @param {rowFilterFunction} [instructions.filterFunction] Passed down to collectTableData and called on each object of collected row data, in order to determine whether that row should be pushed to the returned array.
+   * @param {scrapePreFunction} [instructions.prefunction] A function executed before scraping begins, used to prepare the webpage in some way; bound to dig object.
+   * @param {rowInFunction} [instructions.inFunction] Passed down to getTable and called on each row iteration, after the column data has been collected.
+   * @param {rowFilterFunction} [instructions.filterFunction] Passed down to getTable and called on each object of collected row data, determining whether that row should be pushed to the returned array.
    *
-   * @return {Array<{Object}>} An array of objects that represent rows, with keys as column names and values as the attribute evaluated - collectTableData output concatenated. 
+   * @return {Array<{Object}>} An array of objects that represent rows, with keys as column names and values as the attribute evaluated - getTable output concatenated. 
    */
-  async scrapeTables(url, instructions){
+  async getTables(url, instructions){
   
     let { tableSelector, rowSelector, columnData, nextPageSelector, preFunction, inFunction, filterFunction } = instructions;
   
     await this.open();
-    let browser = this.browser;
     let page = this.page;
   
     await page.goto(url);
   
     // Perform some prefunction, if given
     if(preFunction !== undefined){
-      await preFunction.bind(this)(page, browser);
+      await preFunction.bind(this)(page);
     }
     
     let tableData = [];
@@ -228,8 +222,7 @@ class Dig {
   
       // Select all of the rows on this page
       let rowHandles = await tableHandle.$$(rowSelector);
-      let inFunctionParams = { page, browser };
-      let thisPageTableData = await collectTableData(rowHandles, columnData, { filterFunction, inFunction, inFunctionParams });
+      let thisPageTableData = await this.getTable(rowHandles, columnData, { filterFunction, inFunction });
       tableData = [...tableData, ...thisPageTableData];
   
       // If we've been told to scroll through multiple pages,
@@ -239,7 +232,7 @@ class Dig {
           let nextPageHandle = await page.$(nextPageSelector);
           await nextPageHandle.click();
           pageNum++;
-          await delay(3000, 3000);
+          await this.delay(3000, 3000);
           await page.waitForSelector(`${tableSelector} ${rowSelector}`); // Ensure our page has loaded
         }
         catch (e){
